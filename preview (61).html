@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Silent Pressure — OT Valve Drift Challenge</title>
+  <style>
+    :root{
+      --bg:#07090a;
+      --steel-0:#0b0f11;
+      --steel-1:#151a1d;
+      --steel-2:#22282c;
+      --steel-3:#343b40;
+      --bolt:#76828a;
+      --ink:#eef4f7;
+      --muted:#a8b2b8;
+      --yellow:#ffcc33;
+      --orange:#ff8d2a;
+      --red:#ff4d4d;
+      --green:#66ff99;
+      --cyan:#6ed7ff;
+      --blue:#77aaff;
+      --dark:#050607;
+      --glass:rgba(255,255,255,.075);
+      --shadow:rgba(0,0,0,.65);
+    }
+
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;background:
+      radial-gradient(circle at 20% 0%,rgba(110,215,255,.08),transparent 35%),
+      linear-gradient(135deg,#050607,#111416 45%,#060708);
+      color:var(--ink);font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;overflow-x:hidden}
+    body{cursor:none}
+
+    .cursor{
+      position:fixed;z-index:9999;pointer-events:none;width:32px;height:32px;transform:translate(-4px,-4px) rotate(-25deg);filter:drop-shadow(0 0 8px rgba(255,204,51,.55))
+    }
+    .cursor:before{content:"🔩";font-size:28px}
+
+    button,input{font-family:inherit}
+    button{cursor:none}
+    .page{display:none;min-height:100vh}
+    .page.active{display:block}
+
+    .noise:before{
+      content:"";position:fixed;inset:0;z-index:50;pointer-events:none;opacity:.035;
+      background-image:
+        linear-gradient(0deg,transparent 0 50%,rgba(255,255,255,.5) 50% 51%,transparent 51%),
+        radial-gradient(circle at 30% 20%,#fff 0 1px,transparent 1px),
+        radial-gradient(circle at 70% 80%,#fff 0 1px,transparent 1px);
+      background-size:100% 5px,90px 90px,140px 140px;
+      mix-blend-mode:overlay;
+    }
+
+    .steel{
+      background:
+        linear-gradient(90deg,rgba(255,255,255,.04),transparent 12%,rgba(255,255,255,.05) 21%,transparent 33%,rgba(255,255,255,.03) 44%,transparent 55%,rgba(255,255,255,.06) 72%,transparent),
+        linear-gradient(180deg,var(--steel-3),var(--steel-1));
+      border:1px solid rgba(255,255,255,.14);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.16),inset 0 -1px 0 rgba(0,0,0,.8),0 18px 48px var(--shadow);
+    }
+
+    .bolted{position:relative}
+    .bolted:before,.bolted:after{
+      content:"";position:absolute;width:12px;height:12px;border-radius:50%;
+      background:radial-gradient(circle at 35% 30%,#d5dee3,#6f7b83 48%,#202529 52%);
+      box-shadow:0 0 0 2px rgba(0,0,0,.4),inset 0 -2px 3px rgba(0,0,0,.55);
+      top:12px;
+    }
+    .bolted:before{left:12px}.bolted:after{right:12px}
+
+    .btn{
+      border:0;border-radius:12px;padding:13px 16px;font-weight:900;letter-spacing:.03em;color:#0a0b0a;
+      background:linear-gradient(180deg,#ffe789,#ffcc33 48%,#b97912);
+      box-shadow:inset 0 2px 0 rgba(255,255,255,.45),inset 0 -3px 0 rgba(0,0,0,.28),0 10px 24px rgba(0,0,0,.35);
+      transition:.16s transform,.16s filter;
+      text-transform:uppercase;font-size:12px;
+    }
+    .btn:hover{transform:translateY(-2px);filter:brightness(1.08)}
+    .btn.secondary{background:linear-gradient(180deg,#3d474d,#1b2023 52%,#0b0d0e);color:#e7eef2;border:1px solid rgba(255,255,255,.12)}
+    .btn.red{background:linear-gradient(180deg,#ff9d9d,#ff4d4d 52%,#8e1818);color:#230303}
+    .btn.green{background:linear-gradient(180deg,#b9ffd0,#66ff99 52%,#159546);color:#061407}
+    .btn.blue{background:linear-gradient(180deg,#c2efff,#6ed7ff 52%,#267aa0);color:#041116}
+    .btn:disabled{opacity:.45;filter:grayscale(1);transform:none}
+
+    .start{
+      min-height:100vh;display:grid;place-items:center;padding:24px;
+      background:
+        linear-gradient(90deg,rgba(0,0,0,.9),rgba(0,0,0,.25)),
+        repeating-linear-gradient(45deg,rgba(255,204,51,.08) 0 18px,rgba(0,0,0,.08) 18px 36px);
+    }
+    .start-shell{
+      width:min(1250px,100%);border-radius:30px;overflow:hidden;display:grid;grid-template-columns:1fr .9fr;
+      background:#0a0d0f;border:1px solid rgba(255,255,255,.18);box-shadow:0 40px 100px rgba(0,0,0,.75);
+    }
+    .start-copy{padding:52px;background:
+      linear-gradient(180deg,rgba(255,255,255,.04),transparent),
+      repeating-linear-gradient(90deg,rgba(255,255,255,.035) 0 1px,transparent 1px 12px),
+      linear-gradient(145deg,#181e21,#07090a);
+    }
+    .tag{display:inline-flex;gap:8px;align-items:center;background:#07090a;border:1px solid rgba(255,204,51,.35);border-radius:999px;padding:8px 12px;color:var(--yellow);font-size:12px;font-weight:900;letter-spacing:.16em;text-transform:uppercase}
+    h1{font-size:clamp(48px,7vw,96px);line-height:.86;margin:18px 0 14px;letter-spacing:-.07em;text-transform:uppercase}
+    h1 span{color:var(--yellow);text-shadow:0 0 24px rgba(255,204,51,.28)}
+    .lead{font-size:20px;line-height:1.55;color:#d8e0e4;max-width:720px}
+    .learn-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:24px 0}
+    .learn{padding:14px;border-radius:16px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.1);color:#d5dde1}
+    .learn b{color:#fff}
+    .name-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+    input{
+      flex:1;min-width:240px;background:#07090a;color:white;border:1px solid rgba(255,204,51,.38);border-radius:14px;padding:15px 16px;font-size:16px;outline:none;
+      box-shadow:inset 0 0 20px rgba(0,0,0,.7)
+    }
+
+    .start-machine{position:relative;min-height:700px;padding:32px;display:grid;place-items:center;background:
+      radial-gradient(circle at 50% 40%,rgba(110,215,255,.1),transparent 35%),
+      linear-gradient(180deg,#2a3135,#111517);
+      border-left:1px solid rgba(255,255,255,.12);
+    }
+    .valve-wheel{
+      width:min(430px,88vw);aspect-ratio:1;border-radius:50%;position:relative;
+      background:radial-gradient(circle,#111 0 14%,#5b646b 15% 17%,transparent 18%),
+      conic-gradient(from 0deg,#4b555c,#111 20%,#6f7b83 35%,#1a1f22 48%,#737f87 62%,#111 80%,#4b555c);
+      border:28px solid #252b2f;box-shadow:inset 0 0 28px #000,0 28px 80px rgba(0,0,0,.75);
+      animation:slowspin 18s linear infinite;
+    }
+    .valve-wheel:before,.valve-wheel:after{content:"";position:absolute;left:50%;top:50%;width:82%;height:24px;background:linear-gradient(180deg,#89949b,#293034);border-radius:999px;transform:translate(-50%,-50%);box-shadow:inset 0 2px 0 rgba(255,255,255,.2)}
+    .valve-wheel:after{transform:translate(-50%,-50%) rotate(90deg)}
+    @keyframes slowspin{to{transform:rotate(360deg)}}
+    .hazard{
+      position:absolute;bottom:0;left:0;right:0;height:80px;background:repeating-linear-gradient(45deg,#ffcc33 0 24px,#151515 24px 48px);
+      border-top:4px solid #000;box-shadow:0 -10px 35px rgba(0,0,0,.5)
+    }
+
+    .topbar{
+      position:sticky;top:0;z-index:30;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;
+      background:linear-gradient(180deg,rgba(18,22,24,.96),rgba(7,9,10,.92));border-bottom:1px solid rgba(255,255,255,.15);backdrop-filter:blur(12px)
+    }
+    .brand{font-weight:950;letter-spacing:-.04em;text-transform:uppercase;display:flex;align-items:center;gap:10px}
+    .led{width:12px;height:12px;border-radius:50%;background:var(--green);box-shadow:0 0 14px var(--green)}
+    .led.yellow{background:var(--yellow);box-shadow:0 0 14px var(--yellow)}
+    .led.red{background:var(--red);box-shadow:0 0 14px var(--red)}
+    .top-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .mini{padding:9px 11px;font-size:11px;border-radius:10px}
+
+    .game{
+      max-width:1900px;margin:0 auto;padding:16px;display:grid;grid-template-columns:330px minmax(0,1fr) 390px;gap:16px;
+    }
+    .panel{border-radius:22px;overflow:visible}
+    .panel-title{
+      padding:15px 18px 11px;border-bottom:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:space-between;
+      background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(0,0,0,.08));
+      font-weight:950;text-transform:uppercase;font-size:13px;letter-spacing:.08em
+    }
+    .panel-body{padding:14px}
+
+    .meter{margin-bottom:12px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:11px}
+    .meter-top{display:flex;justify-content:space-between;font-weight:800;font-size:12px;color:#e8eff2}
+    .bar{height:10px;background:#060708;border:1px solid rgba(255,255,255,.08);border-radius:999px;overflow:hidden;margin-top:8px}
+    .fill{height:100%;width:50%;background:linear-gradient(90deg,var(--green),var(--yellow));transition:.35s width}
+    .fill.red{background:linear-gradient(90deg,var(--yellow),var(--red))}
+    .fill.blue{background:linear-gradient(90deg,var(--blue),var(--cyan))}
+    .hint-card{
+      background:rgba(110,215,255,.08);border:1px solid rgba(110,215,255,.22);border-radius:16px;padding:13px;color:#dceff7;line-height:1.45;font-size:13px;margin-bottom:12px
+    }
+    .step-list{display:grid;gap:9px}
+    .step{padding:11px;border-radius:14px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.1);font-size:13px;color:#dce3e6}
+    .step.done{border-color:rgba(102,255,153,.45);background:rgba(102,255,153,.08)}
+    .step b{color:#fff}
+
+    .plant-panel{min-height:760px;overflow-x:auto;overflow-y:hidden}
+    .plant{
+      width:1040px;min-width:1040px;
+      min-height:735px;position:relative;overflow:hidden;border-radius:0 0 22px 22px;background:
+        radial-gradient(circle at 50% 35%,rgba(255,204,51,.06),transparent 35%),
+        repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 1px,transparent 1px 22px),
+        repeating-linear-gradient(90deg,rgba(255,255,255,.02) 0 1px,transparent 1px 22px),
+        linear-gradient(180deg,#20262a,#0b0e10);
+    }
+    .floor{
+      position:absolute;left:0;right:0;bottom:0;height:150px;background:
+        repeating-linear-gradient(45deg,rgba(255,255,255,.04) 0 2px,transparent 2px 16px),
+        linear-gradient(180deg,#171b1e,#070809);
+      border-top:1px solid rgba(255,255,255,.12)
+    }
+    .pipe{position:absolute;background:linear-gradient(180deg,#88949b,#3d464c 45%,#1b2023 46%,#68737a);border:1px solid #1c2226;box-shadow:inset 0 2px 0 rgba(255,255,255,.28),0 10px 24px rgba(0,0,0,.35)}
+    .pipe.h{height:36px;border-radius:999px}.pipe.v{width:36px;border-radius:999px}
+    .pipe.flow:after{
+      content:"";position:absolute;inset:8px;border-radius:999px;background:repeating-linear-gradient(90deg,transparent 0 20px,rgba(102,255,153,.55) 20px 30px);
+      animation:flow 1s linear infinite;opacity:.75
+    }
+    .pipe.v.flow:after{background:repeating-linear-gradient(180deg,transparent 0 20px,rgba(102,255,153,.55) 20px 30px)}
+    @keyframes flow{to{background-position:50px 0}}
+
+    .asset{
+      position:absolute;border-radius:18px;padding:13px;background:
+        linear-gradient(90deg,rgba(255,255,255,.05),transparent 35%,rgba(255,255,255,.04)),
+        linear-gradient(180deg,#3b444a,#171c1f);
+      border:1px solid rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.2),inset 0 -2px 0 rgba(0,0,0,.6),0 18px 38px rgba(0,0,0,.5);
+      transition:.18s transform,.18s box-shadow,.18s border;cursor:none;
+    }
+    .asset:hover{transform:translateY(-3px);border-color:rgba(255,204,51,.65);box-shadow:0 0 28px rgba(255,204,51,.14),inset 0 1px 0 rgba(255,255,255,.2),0 18px 38px rgba(0,0,0,.5)}
+    .asset .name{font-weight:950;font-size:13px;text-transform:uppercase;letter-spacing:.04em}
+    .asset .meta{font-size:11px;color:#b7c1c7;margin-top:4px}
+    .status{display:inline-flex;gap:7px;align-items:center;margin-top:10px;padding:6px 8px;border-radius:999px;background:#080a0b;border:1px solid rgba(255,255,255,.12);font-size:11px;color:#e9f1f4}
+    .dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}
+    .dot.warn{background:var(--yellow);box-shadow:0 0 10px var(--yellow)}
+    .dot.bad{background:var(--red);box-shadow:0 0 10px var(--red)}
+
+    .reactor{left:410px;top:100px;width:210px;height:235px;border-radius:38px}
+    .reactor:after{content:"";position:absolute;left:22px;right:22px;bottom:18px;height:52px;border-radius:50%;background:radial-gradient(circle,rgba(255,204,51,.18),transparent 70%)}
+    .valve{left:655px;top:360px;width:160px;height:135px}
+    .plc{left:780px;top:105px;width:175px;height:145px}
+    .eng{left:790px;top:275px;width:185px;height:145px}
+    .sensor{left:270px;top:390px;width:160px;height:135px}
+    .ids{left:70px;top:130px;width:175px;height:140px}
+    .soc{left:72px;top:330px;width:175px;height:155px}
+    .historian{left:520px;top:520px;width:200px;height:130px}
+
+    .valve-wheel-small{position:absolute;right:18px;bottom:14px;width:44px;height:44px;border-radius:50%;border:8px solid #222;background:conic-gradient(#aab5bb,#2d3438,#aab5bb,#2d3438);animation:valverot 8s linear infinite}
+    @keyframes valverot{to{transform:rotate(360deg)}}
+    .smoke{position:absolute;left:470px;top:36px;width:95px;height:80px;opacity:.28}
+    .smoke span{position:absolute;bottom:0;width:22px;height:50px;border-radius:50%;background:rgba(255,255,255,.22);filter:blur(2px);animation:smoke 3.4s ease-in-out infinite}
+    .smoke span:nth-child(2){left:30px;animation-delay:.5s}.smoke span:nth-child(3){left:62px;animation-delay:1s}
+    @keyframes smoke{to{transform:translateY(-60px) scale(1.9);opacity:0}}
+
+    .console-wrap{display:grid;gap:12px}
+    .terminal{
+      background:#020403;border:1px solid rgba(102,255,153,.25);border-radius:16px;overflow:hidden;box-shadow:inset 0 0 28px rgba(102,255,153,.05)
+    }
+    .term-head{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#07100b;border-bottom:1px solid rgba(102,255,153,.18);font:12px ui-monospace,Consolas,monospace;color:#b7ffc9}
+    .term-body{height:250px;overflow:auto;padding:12px;font:12px/1.45 ui-monospace,Consolas,monospace;color:#b7ffc9;white-space:pre-wrap}
+    .term-input{display:flex;border-top:1px solid rgba(102,255,153,.18);align-items:center;background:#050806}
+    .prompt{padding-left:12px;color:#66ff99;font:13px ui-monospace,Consolas,monospace}
+    .cmd{
+      flex:1;background:transparent;border:0;color:#d7ffdf;padding:12px;font:13px ui-monospace,Consolas,monospace;outline:none;min-width:0
+    }
+    .cmd-help{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px}
+    .cmd-help button{text-align:left}
+
+    .soc-feed{height:220px;overflow:auto;display:grid;gap:9px}
+    .feed-item{padding:11px;border-radius:14px;background:rgba(0,0,0,.22);border:1px solid rgba(255,255,255,.09);font-size:12px;color:#dce3e6;line-height:1.4}
+    .feed-item b{color:#fff}.feed-item.warn{border-color:rgba(255,204,51,.3)}.feed-item.bad{border-color:rgba(255,77,77,.38)}
+
+    .modal{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;padding:16px}
+    .modal.active{display:flex}
+    .modal-card{width:min(860px,100%);max-height:88vh;overflow:auto;border-radius:24px}
+    .modal-head{padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.13);display:flex;justify-content:space-between;align-items:center}
+    .modal-body{padding:18px}
+    .tutorial-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    .tutorial-card{padding:15px;border-radius:16px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.1);line-height:1.45;color:#dce3e6}
+    .tutorial-card b{color:#fff}
+    .telemetry{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+    .tele{padding:13px;border-radius:14px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.1)}
+    .tele b{display:block;color:#aeb8be;font-size:11px;text-transform:uppercase;margin-bottom:7px}
+    .tele strong{font-size:22px}
+    .mono{background:#020403;border:1px solid rgba(102,255,153,.2);border-radius:14px;padding:12px;color:#b7ffc9;font:12px/1.5 ui-monospace,Consolas,monospace;white-space:pre-wrap}
+    .asset-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+
+    .toast{position:fixed;right:18px;bottom:18px;z-index:90;display:grid;gap:10px;max-width:420px}
+    .toast .item{padding:13px 14px;border-radius:16px;background:linear-gradient(180deg,#242b2f,#0d1012);border:1px solid rgba(255,204,51,.28);box-shadow:0 20px 60px rgba(0,0,0,.55);animation:toast .25s ease}
+    @keyframes toast{from{opacity:0;transform:translateY(10px)}}
+
+    .report-page{padding:22px;max-width:1180px;margin:0 auto}
+    .report{background:#e9edf0;color:#171b1d;border-radius:28px;padding:32px;border:10px solid #4b555c;box-shadow:0 30px 90px rgba(0,0,0,.65)}
+    .report h2{font-size:42px;margin:0;color:#111}
+    .report p,.report li{color:#30383c;line-height:1.55}
+    .report-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0}
+    .paper-card{background:#fff;border:1px solid #cbd3d8;border-radius:18px;padding:16px}
+    .paper-card b{font-size:11px;text-transform:uppercase;color:#62707a;letter-spacing:.08em}
+    .paper-card strong{display:block;margin-top:8px;font-size:25px;color:#111}
+    .cert{margin-top:22px;background:linear-gradient(145deg,#1b1f23,#48535b 48%,#1b1f23);color:white;border:4px solid #ffcc33;border-radius:30px;text-align:center;padding:42px;position:relative;overflow:hidden;box-shadow:0 30px 90px rgba(0,0,0,.65), inset 0 0 40px rgba(255,255,255,.06)}
+    .cert:before{content:"";position:absolute;inset:14px;border:1px solid rgba(255,204,51,.45);border-radius:18px;pointer-events:none}
+    .cert h3{font-size:40px;margin:0;color:#ffe89d;text-shadow:0 0 18px rgba(255,223,121,.22)}
+    .cert .name{font-size:38px;font-family:Georgia,serif;margin:20px 0;color:#ffffff;text-shadow:0 0 12px rgba(255,255,255,.15)}
+    .signature{font-family:Brush Script MT,Segoe Script,cursive;font-size:34px;color:#ffdf79;margin-top:16px}
+
+    .glitch{animation:glitch .18s steps(2) 5}
+    @keyframes glitch{50%{transform:translate(2px,-1px);filter:hue-rotate(25deg) contrast(1.1)}}
+
+    @media(max-width:1280px){
+      .game{grid-template-columns:1fr}
+      .plant{min-height:840px}
+      .panel.left{order:1}.plant-panel{order:2}.panel.right{order:3}
+    }
+    @media(max-width:860px){
+      body{cursor:auto}.cursor{display:none}button,.asset{cursor:pointer}
+      .start-shell{grid-template-columns:1fr}.start-machine{display:none}.start-copy{padding:28px}.learn-grid,.tutorial-grid,.telemetry,.report-grid{grid-template-columns:1fr}
+      .topbar{align-items:flex-start;flex-direction:column}
+      .plant-panel{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
+      .plant-panel::-webkit-scrollbar{height:12px}
+      .plant-panel::-webkit-scrollbar-track{background:#080a0b;border-radius:999px}
+      .plant-panel::-webkit-scrollbar-thumb{background:linear-gradient(90deg,#ffcc33,#6ed7ff);border-radius:999px;border:2px solid #080a0b}
+      .plant{min-width:1040px;min-height:760px}
+      .plant:before{
+        content:"arraste para o lado para ver todo o chão de fábrica";
+        position:absolute;left:14px;top:12px;z-index:4;
+        background:rgba(0,0,0,.72);border:1px solid rgba(255,204,51,.42);
+        color:#ffdf79;border-radius:999px;padding:8px 12px;
+        font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;
+      }
+      .asset{cursor:pointer}
+    }
+  </style>
+</head>
+<body class="noise">
+  <div class="cursor" id="cursor"></div>
+
+  <section class="page active" id="startPage">
+    <div class="start">
+      <div class="start-shell steel bolted">
+        <div class="start-copy">
+          <div class="tag"><span class="led yellow"></span> OT RED TEAM SIMULATOR</div>
+          <h1>SILENT<br><span>PRESSURE</span></h1>
+          <p class="lead">
+            Um jogo de OT Security onde você tenta manipular discretamente uma válvula industrial enquanto o SOC NPC observa, correlaciona e reage. Não é quiz. É processo, protocolo, stealth e consequência.
+          </p>
+          <div class="name-row">
+            <input id="playerName" placeholder="Nome do operador para relatório/certificado"/>
+            <button class="btn green" id="startBtn">Iniciar simulação</button>
+          </div>
+          <p style="color:#aeb8be;font-size:13px;margin-top:16px">
+            Missão: alcançar 12% de drift acumulado na válvula V-12 mantendo detecção SOC abaixo de 75% e risco físico abaixo de 70%.
+          </p>
+        </div>
+        <div class="start-machine">
+          <div class="valve-wheel"></div>
+          <div class="hazard"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="page" id="gamePage">
+    <div class="topbar">
+      <div class="brand"><span class="led" id="mainLed"></span> Silent Pressure <span id="clock" style="color:#aeb8be;font-weight:800">T+00:00</span></div>
+      <div class="top-actions">
+        <button class="btn blue mini" id="tutorialBtn">Tutorial</button>
+        <button class="btn secondary mini" id="muteBtn">Som: ligado</button>
+        <button class="btn red mini" id="finishBtn">Encerrar operação</button>
+      </div>
+    </div>
+
+    <main class="game">
+      <aside class="panel steel bolted left">
+        <div class="panel-title">Missão e Aprendizado <span class="led yellow"></span></div>
+        <div class="panel-body">
+          <div class="hint-card">
+            <b>Como vencer:</b><br>
+            Use a console para reconhecer a rede, entender registradores e aplicar drift gradual na válvula V-12. Se fizer scan agressivo ou alteração brusca, o SOC escala.
+          </div>
+          <div class="step-list">
+            <div class="step" id="step1"><b>1.</b> Rode <code>help</code> na console.</div>
+            <div class="step" id="step2"><b>2.</b> Use reconhecimento leve: <code>passive-map</code>.</div>
+            <div class="step" id="step3"><b>3.</b> Leia registradores: <code>read-register 40112</code>.</div>
+            <div class="step" id="step4"><b>4.</b> Aplique drift pequeno: <code>write-valve V-12 +1</code>.</div>
+            <div class="step" id="step5"><b>5.</b> Monitore o SOC: <code>soc-status</code>.</div>
+          </div>
+
+          <div style="height:14px"></div>
+          <div class="meter"><div class="meter-top"><span>Drift V-12</span><span id="mDrift">0%</span></div><div class="bar"><div class="fill" id="bDrift"></div></div></div>
+          <div class="meter"><div class="meter-top"><span>Detecção SOC</span><span id="mDetect">8%</span></div><div class="bar"><div class="fill red" id="bDetect"></div></div></div>
+          <div class="meter"><div class="meter-top"><span>Risco físico</span><span id="mPhysical">14%</span></div><div class="bar"><div class="fill red" id="bPhysical"></div></div></div>
+          <div class="meter"><div class="meter-top"><span>Estabilidade do processo</span><span id="mStable">88%</span></div><div class="bar"><div class="fill blue" id="bStable"></div></div></div>
+          <div class="meter"><div class="meter-top"><span>Ruído operacional</span><span id="mNoise">22%</span></div><div class="bar"><div class="fill red" id="bNoise"></div></div></div>
+        </div>
+      </aside>
+
+      <section class="panel steel bolted plant-panel">
+        <div class="panel-title">Chão de fábrica — Planta 7 <span id="plantState">Operação nominal</span></div>
+        <div class="plant" id="plant">
+          <div class="smoke"><span></span><span></span><span></span></div>
+          <div class="pipe h flow" style="left:220px;top:194px;width:230px"></div>
+          <div class="pipe h flow" style="left:612px;top:194px;width:180px"></div>
+          <div class="pipe v flow" style="left:347px;top:228px;height:180px"></div>
+          <div class="pipe h flow" style="left:426px;top:418px;width:238px"></div>
+          <div class="pipe v" style="left:846px;top:240px;height:72px"></div>
+          <div class="floor"></div>
+
+          <div class="asset ids bolted" data-asset="ids"><div class="name">IDS Industrial</div><div class="meta">Assinatura + comportamento</div><div class="status"><span class="dot" id="dIds"></span><span id="sIds">observando</span></div></div>
+          <div class="asset soc bolted" data-asset="soc"><div class="name">SOC NPC</div><div class="meta">N1/N2 OT</div><div class="status"><span class="dot" id="dSoc"></span><span id="sSoc">baixo atrito</span></div></div>
+          <div class="asset sensor bolted" data-asset="sensor"><div class="name">Sensor PT-44</div><div class="meta">Pressão física</div><div class="status"><span class="dot" id="dSensor"></span><span id="sSensor">coerente</span></div></div>
+          <div class="asset reactor bolted" data-asset="reactor"><div class="name">Reator R-07</div><div class="meta">Temperatura / pressão</div><div class="status"><span class="dot" id="dReactor"></span><span id="sReactor">estável</span></div></div>
+          <div class="asset valve bolted" data-asset="valve"><div class="name">Válvula V-12</div><div class="meta">Modbus register 40112</div><div class="status"><span class="dot warn" id="dValve"></span><span id="sValve">0% drift</span></div><div class="valve-wheel-small"></div></div>
+          <div class="asset plc bolted" data-asset="plc"><div class="name">PLC-4A</div><div class="meta">Controlador Level 1</div><div class="status"><span class="dot" id="dPlc"></span><span id="sPlc">auto</span></div></div>
+          <div class="asset eng bolted" data-asset="eng"><div class="name">ENG-WS-02</div><div class="meta">Estação engenharia</div><div class="status"><span class="dot warn" id="dEng"></span><span id="sEng">sessão herdada</span></div></div>
+          <div class="asset historian bolted" data-asset="historian"><div class="name">Historiador H-9</div><div class="meta">Séries temporais</div><div class="status"><span class="dot" id="dHist"></span><span id="sHist">ingestão normal</span></div></div>
+        </div>
+      </section>
+
+      <aside class="panel steel bolted right">
+        <div class="panel-title">Console Interativa <span class="led"></span></div>
+        <div class="panel-body console-wrap">
+          <div class="hint-card">
+            Sim, a console funciona. Digite comandos abaixo. Comece com <b>help</b>. Ela simula ações OT: reconhecimento, leitura de registrador, alteração de válvula e status do SOC.
+          </div>
+          <div class="terminal">
+            <div class="term-head"><span>ot-shell@planta7</span><span>interactive</span></div>
+            <div class="term-body" id="termOut"></div>
+            <div class="term-input"><span class="prompt">$</span><input class="cmd" id="cmdInput" autocomplete="off" spellcheck="false" placeholder="digite help"/></div>
+          </div>
+          <div class="cmd-help">
+            <button class="btn secondary mini" data-cmd="help">Inserir help</button>
+            <button class="btn secondary mini" data-cmd="passive-map">Inserir passive-map</button>
+            <button class="btn secondary mini" data-cmd="read-register 40112">Inserir read-register 40112</button>
+            <button class="btn secondary mini" data-cmd="write-valve V-12 +1">Inserir write-valve V-12 +1</button>
+            <button class="btn secondary mini" data-cmd="soc-status">Inserir soc-status</button>
+          </div>
+
+          <div class="panel-title" style="border:1px solid rgba(255,255,255,.12);border-radius:14px;margin-top:6px">Feed do SOC NPC</div>
+          <div class="soc-feed" id="socFeed"></div>
+        </div>
+      </aside>
+    </main>
+  </section>
+
+  <section class="page" id="reportPage">
+    <div class="report-page">
+      <div class="report">
+        <h2>Relatório da Operação</h2>
+        <p id="reportIntro"></p>
+        <div class="report-grid">
+          <div class="paper-card"><b>Drift final</b><strong id="rDrift"></strong></div>
+          <div class="paper-card"><b>Detecção SOC</b><strong id="rDetect"></strong></div>
+          <div class="paper-card"><b>Risco físico</b><strong id="rPhysical"></strong></div>
+          <div class="paper-card"><b>Resultado</b><strong id="rResult"></strong></div>
+        </div>
+        <h3>O que o jogador aprendeu</h3>
+        <ul id="learned"></ul>
+        <h3>Análise do SOC NPC</h3>
+        <p id="socAnalysis"></p>
+        <h3>Comentário ácido da planta</h3>
+        <p id="acid"></p>
+
+        <div class="cert" id="certificate">
+          <h3>Certificado OT Security</h3>
+          <p>Concedido a</p>
+          <div class="name" id="certName"></div>
+          <p id="certText" style="max-width:760px;margin:0 auto 18px;line-height:1.6;color:#f3f7fa;font-size:17px"></p>
+
+          <div style="max-width:860px;margin:0 auto 24px;background:rgba(0,0,0,.55);border:1px solid rgba(255,204,51,.38);border-radius:18px;padding:18px;text-align:left;box-shadow:inset 0 0 22px rgba(0,0,0,.35)">
+            <div style="font-size:13px;color:#ffdf79;font-weight:900;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">
+              Competências praticadas no desafio
+            </div>
+            <ul style="margin:0;padding-left:20px;line-height:1.7;color:#ffffff;text-shadow:0 1px 2px rgba(0,0,0,.75)">
+              <li>Reconhecimento OT com baixo ruído operacional</li>
+              <li>Leitura e interpretação de registradores Modbus</li>
+              <li>Correlação entre processo físico e telemetria industrial</li>
+              <li>Stealth OT e manipulação gradual de válvulas</li>
+              <li>Interação entre SOC OT, historiador, PLC e engenharia</li>
+              <li>Conceitos de Purdue, IDS industrial e baseline operacional</li>
+            </ul>
+          </div>
+
+          <p style="font-size:18px;color:#ffffff"><strong>Carga horária:</strong> 2h · <strong>Data:</strong> <span id="certDate"></span></p>
+          <div class="signature">Mariana BS (Instrutora)</div>
+          <p style="font-size:13px;color:#d7e1e6;margin-top:12px">Be Safe · Silent Pressure · OT Security Interactive Challenge</p>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px">
+          <button class="btn green" id="downloadCert">Baixar certificado PNG</button>
+          <button class="btn secondary" id="restartBtn">Refazer</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="modal" id="tutorialModal">
+    <div class="modal-card steel bolted">
+      <div class="modal-head">
+        <strong>Como jogar Silent Pressure</strong>
+        <button class="btn secondary mini" id="closeTutorial">Fechar</button>
+      </div>
+      <div class="modal-body">
+        <div class="tutorial-grid">
+          <div class="tutorial-card"><b>1. Você é o atacante OT.</b><br>Mas o jogo não incentiva destruição. O objetivo é entender como pequenas manipulações físicas podem passar despercebidas.</div>
+          <div class="tutorial-card"><b>2. A console é interativa.</b><br>Digite comandos como <code>passive-map</code>, <code>read-register 40112</code> e <code>write-valve V-12 +1</code>.</div>
+          <div class="tutorial-card"><b>3. O SOC NPC reage.</b><br>Scan agressivo, escrita brusca e risco físico aumentam detecção. Ações graduais e reconhecimento passivo geram menos ruído.</div>
+          <div class="tutorial-card"><b>4. Aprendizado prático.</b><br>Você verá Modbus, registradores, Purdue, historiador, estação de engenharia, IDS industrial e impacto físico.</div>
+          <div class="tutorial-card"><b>5. Vencer não é explodir.</b><br>Vença chegando a 12% de drift com detecção menor que 75% e risco físico menor que 70%.</div>
+          <div class="tutorial-card"><b>6. Perder também ensina.</b><br>Se fizer barulho, o SOC escala. Se exagerar na válvula, o processo denuncia você antes do SIEM.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="assetModal">
+    <div class="modal-card steel bolted">
+      <div class="modal-head">
+        <strong id="assetTitle">Ativo</strong>
+        <button class="btn secondary mini" id="closeAsset">Fechar</button>
+      </div>
+      <div class="modal-body">
+        <div class="telemetry" id="telemetry"></div>
+        <div class="mono" id="assetText"></div>
+        <div class="asset-actions" id="assetActions"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const $ = s => document.querySelector(s);
+    const $$ = s => [...document.querySelectorAll(s)];
+
+    const state = {
+      player:"",
+      seconds:0,
+      timer:null,
+      muted:false,
+      finished:false,
+      metrics:{
+        drift:0,
+        detect:8,
+        physical:14,
+        stable:88,
+        noise:22
+      },
+      flags:{
+        help:false,
+        passive:false,
+        read:false,
+        wrote:false,
+        soc:false,
+        aggressiveScan:false,
+        bigWrite:false,
+        historian:false,
+        purdue:false,
+        eng:false,
+        plc:false
+      },
+      log:[],
+      soc:[],
+      commands:0
+    };
+
+    function clamp(v,min,max){return Math.max(min,Math.min(max,v))}
+    function fmtTime(s){return "T+"+String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0")}
+
+    function beep(freq=420,dur=.05,type="sine",gain=.035){
+      if(state.muted) return;
+      try{
+        const ctx = beep.ctx || (beep.ctx = new (window.AudioContext||window.webkitAudioContext)());
+        const o=ctx.createOscillator(), g=ctx.createGain();
+        o.type=type;o.frequency.value=freq;g.gain.value=gain;o.connect(g);g.connect(ctx.destination);o.start();
+        g.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+dur);o.stop(ctx.currentTime+dur);
+      }catch(e){}
+    }
+
+    function toast(msg){
+      const el=document.createElement("div"); el.className="item"; el.textContent=msg; $("#toast").appendChild(el);
+      setTimeout(()=>el.remove(),4200);
+    }
+
+    function term(text, cls=""){
+      const out=$("#termOut");
+      const line=document.createElement("div");
+      line.textContent=text;
+      if(cls) line.style.color=cls;
+      out.appendChild(line);
+      out.scrollTop=out.scrollHeight;
+    }
+
+    function socMsg(text,severity=""){
+      const el=document.createElement("div"); el.className="feed-item "+severity;
+      el.innerHTML = "<b>"+fmtTime(state.seconds)+"</b><br>"+text;
+      $("#socFeed").prepend(el);
+      state.soc.unshift({time:fmtTime(state.seconds),text,severity});
+      while($("#socFeed").children.length>16) $("#socFeed").lastChild.remove();
+    }
+
+    function updateUI(){
+      const m=state.metrics;
+      $("#mDrift").textContent=Math.round(m.drift)+"%"; $("#bDrift").style.width=m.drift+"%";
+      $("#mDetect").textContent=Math.round(m.detect)+"%"; $("#bDetect").style.width=m.detect+"%";
+      $("#mPhysical").textContent=Math.round(m.physical)+"%"; $("#bPhysical").style.width=m.physical+"%";
+      $("#mStable").textContent=Math.round(m.stable)+"%"; $("#bStable").style.width=m.stable+"%";
+      $("#mNoise").textContent=Math.round(m.noise)+"%"; $("#bNoise").style.width=m.noise+"%";
+      $("#sValve").textContent=Math.round(m.drift)+"% drift";
+      $("#dValve").className="dot "+(m.drift>=10?"bad":m.drift>=4?"warn":"");
+      $("#sSoc").textContent=m.detect>75?"escalando":m.detect>45?"suspeito":"baixo atrito";
+      $("#dSoc").className="dot "+(m.detect>75?"bad":m.detect>45?"warn":"");
+      $("#sReactor").textContent=m.physical>70?"risco alto":m.physical>45?"pressionado":"estável";
+      $("#dReactor").className="dot "+(m.physical>70?"bad":m.physical>45?"warn":"");
+      $("#sIds").textContent=m.noise>60?"anomalia":m.noise>35?"ruído leve":"observando";
+      $("#dIds").className="dot "+(m.noise>60?"bad":m.noise>35?"warn":"");
+      $("#plantState").textContent = m.physical>70 ? "Risco físico alto" : m.detect>75 ? "SOC escalando" : m.drift>=12 ? "Objetivo alcançado" : "Operação nominal";
+      $("#mainLed").className="led "+(m.physical>70||m.detect>75?"red":m.drift>=9?"yellow":"");
+      $("#step1").classList.toggle("done",state.flags.help);
+      $("#step2").classList.toggle("done",state.flags.passive);
+      $("#step3").classList.toggle("done",state.flags.read);
+      $("#step4").classList.toggle("done",state.flags.wrote);
+      $("#step5").classList.toggle("done",state.flags.soc);
+    }
+
+    function alter(delta, reason){
+      for(const k in delta) state.metrics[k]=clamp(state.metrics[k]+delta[k],0,100);
+      updateUI();
+      if(reason) term(reason, "#d7ffdf");
+      if(delta.detect>10 || delta.physical>10){
+        $("#plant").classList.add("glitch"); setTimeout(()=>$("#plant").classList.remove("glitch"),700);
+        beep(160,.09,"square",.04);
+      } else beep(620,.05,"triangle",.03);
+      checkEnd();
+    }
+
+    const helpText = `Comandos disponíveis:
+help                         mostra este menu
+passive-map                  mapeia rede OT com baixo ruído
+active-scan                  faz scan agressivo e chama atenção
+show-purdue                  exibe níveis Purdue simplificados
+list-assets                  lista ativos OT conhecidos
+read-register 40112          lê abertura da válvula V-12
+read-register 30044          lê pressão física PT-44
+write-valve V-12 +1          aplica drift discreto de +1%
+write-valve V-12 +3          aplica drift alto e suspeito
+write-valve V-12 -1          reduz drift para estabilizar
+historian-query V-12         compara tendência com historiador
+modscan 10.7.10.4            enumera registradores Modbus simulados
+s7-enum plc-4a               enumeração simulada Siemens S7
+opcua-browse historian-h9    navegação OPC-UA simulada
+show-sessions                mostra sessões OT ativas
+soc-status                   mostra percepção atual do SOC
+clear                        limpa console
+
+Objetivo:
+chegar a 12% de drift sem passar de 75% de detecção SOC nem 70% de risco físico.`;
+
+    function runCommand(raw){
+      const cmd=raw.trim();
+      if(!cmd) return;
+      state.commands++;
+      term("$ "+cmd, "#ffdf79");
+
+      const c=cmd.toLowerCase();
+
+      if(c==="clear"){ $("#termOut").innerHTML=""; return; }
+
+      if(c==="help"){
+        state.flags.help=true;
+        term(helpText);
+        updateUI(); return;
+      }
+
+      if(c==="passive-map"){
+        state.flags.passive=true;
+        alter({detect:+3,noise:+2}, `Mapa passivo:
+10.7.1.12  ENG-WS-02       Level 3/2 jump
+10.7.2.20  Historian H-9   Level 3
+10.7.10.4  PLC-4A          Level 1
+10.7.10.12 V-12 register   Level 0/1
+
+Baixo ruído. O SOC viu telemetria comum, mas ainda não tem história.`);
+        socMsg("N1: pequeno aumento de consulta passiva em segmento OT. Mantido como observação.", "");
+        return;
+      }
+
+      if(c==="active-scan"){
+        state.flags.aggressiveScan=true;
+        alter({detect:+24,noise:+28,stable:-4}, `Scan ativo detectado:
+Várias conexões para PLC-4A em janela curta.
+IDS industrial marcou comportamento incompatível com estação de engenharia.
+
+Parabéns, você usou a delicadeza de um trator em sala limpa.`);
+        socMsg("N1: varredura ativa em Level 1. Abrindo ticket para N2 OT.", "bad");
+        return;
+      }
+
+      if(c==="show-purdue"){
+        state.flags.purdue=true;
+        alter({detect:+1}, `Modelo Purdue simplificado:
+Level 4/5  Corporativo
+Level 3    Operações / Historiador
+IDMZ       Zona industrial desmilitarizada
+Level 2    HMI / supervisório
+Level 1    PLC / controle
+Level 0    sensores, atuadores, válvulas
+
+Lição: o caminho até a válvula passa por processo, não só por IP.`);
+        return;
+      }
+
+      if(c==="list-assets"){
+        alter({detect:+2,noise:+1}, `Ativos conhecidos:
+ENG-WS-02      estação de engenharia com sessão herdada
+PLC-4A         controlador da malha R-07
+V-12           válvula de fluxo no registrador 40112
+PT-44          sensor físico de pressão
+H-9            historiador de séries temporais
+IDS-OT         sensor de rede industrial`);
+        return;
+      }
+
+      if(c==="read-register 40112"){
+        state.flags.read=true;
+        alter({detect:+2,noise:+1}, `MODBUS READ HOLDING REGISTER
+Target: PLC-4A
+Register: 40112
+Meaning: V-12 commanded opening offset
+Value: +${Math.round(state.metrics.drift)}%
+
+Leitura defensável. Pouco ruído. Você ainda parece manutenção entediada.`);
+        return;
+      }
+
+      if(c==="read-register 30044"){
+        alter({detect:+2}, `MODBUS READ INPUT REGISTER
+Target: PLC-4A
+Register: 30044
+Meaning: PT-44 physical pressure
+Value: ${(6.2 + state.metrics.drift*0.11).toFixed(2)} bar
+
+Pressão acompanha drift. A física está começando a fofocar.`);
+        return;
+      }
+
+      if(c==="write-valve v-12 +1" || c==="write-valve v12 +1"){
+        state.flags.wrote=true;
+        const stealthBonus = state.flags.passive && state.flags.read ? -1 : 2;
+        alter({drift:+1,detect:+(5+stealthBonus),physical:+4,stable:-2,noise:+3}, `WRITE SINGLE REGISTER
+V-12 offset +1%.
+Mudança pequena. Em OT, o crime elegante começa parecendo ajuste operacional.`);
+        if(state.metrics.drift>=4 && state.metrics.drift<8) socMsg("N1: V-12 com pequenas correções recorrentes. Pode ser manutenção. Monitorar.", "warn");
+        if(state.metrics.drift>=8) socMsg("N2: padrão persistente em V-12. Correlacionar com pressão PT-44 e sessão ENG-WS-02.", "warn");
+        return;
+      }
+
+      if(c==="write-valve v-12 +3" || c==="write-valve v12 +3"){
+        state.flags.wrote=true; state.flags.bigWrite=true;
+        alter({drift:+3,detect:+22,physical:+15,stable:-9,noise:+16}, `WRITE SINGLE REGISTER
+V-12 offset +3%.
+Foi rápido, foi efetivo e foi tão discreto quanto sirene de empilhadeira às 3 da manhã.`);
+        socMsg("N2: alteração abrupta em V-12 associada a variação física. Escalar para engenharia OT.", "bad");
+        return;
+      }
+
+      if(c==="write-valve v-12 -1" || c==="write-valve v12 -1"){
+        alter({drift:-1,detect:+2,physical:-5,stable:+4,noise:+1}, `V-12 offset reduzido em 1%.
+Boa contenção. Saber recuar é o que separa stealth de manchete.`);
+        socMsg("N1: V-12 retornando parcialmente ao baseline. Manter observação.", "");
+        return;
+      }
+
+      
+      if(c==="modscan 10.7.10.4"){
+        alter({detect:+8,noise:+10,stable:-1}, `MODSCAN iniciado:
+PLC-4A respondeu:
+40112  Valve offset
+30044  Pressure PT-44
+40188  PID override
+40201  Maintenance flag
+
+O IDS marcou comportamento de enumeração industrial. Ainda plausível... mas começando a feder.`);
+        socMsg("N1: enumeração Modbus identificada em PLC-4A. Verificar origem ENG-WS-02.", "warn");
+        return;
+      }
+
+      if(c==="s7-enum plc-4a"){
+        alter({detect:+10,noise:+12,stable:-2}, `S7 ENUM:
+CPU: SIMATIC S7-1500
+Protection: partial
+Engineering mode: enabled
+Last logic upload: 23:41
+
+Você aprendeu uma lição clássica:
+o problema raramente é só o PLC. É quem conseguiu falar com ele.`);
+        socMsg("N2: enumeração S7 fora de padrão operacional. Correlacionar com maintenance window.", "warn");
+        return;
+      }
+
+      if(c==="opcua-browse historian-h9"){
+        alter({detect:+4,noise:+3}, `OPC-UA browse:
+nodes:
+- historian/v12/trend
+- historian/reactor/temp
+- historian/reactor/pressure
+
+O historiador entrega narrativa operacional.
+Ataque OT stealth precisa respeitar baseline físico.`);
+        return;
+      }
+
+      if(c==="show-sessions"){
+        alter({detect:+2}, `Sessões OT ativas:
+ENG-WS-02   engineer.local
+HMI-2       operator.shiftB
+Historian   svc_hist
+VPN legacy  integrator.temp
+
+OT moderno:
+a sessão esquecida de ontem é o incidente elegante de amanhã.`);
+        return;
+      }
+
+if(c==="historian-query v-12"){
+        state.flags.historian=true;
+        alter({detect:+3,noise:+2}, `Historiador H-9:
+baseline V-12: variação normal até 2%
+tendência atual: ${Math.round(state.metrics.drift)}%
+pressão PT-44 acompanha ${Math.round(state.metrics.drift*0.82)}% da alteração
+comentário: desvio está virando processo, não só pacote.
+
+Lição: em OT, o historiador entrega o atacante quando a rede ainda está discutindo falso positivo.`);
+        return;
+      }
+
+      if(c==="soc-status"){
+        state.flags.soc=true;
+        alter({detect:+1}, `SOC NPC:
+Detecção: ${Math.round(state.metrics.detect)}%
+Ruído: ${Math.round(state.metrics.noise)}%
+Hipótese atual: ${state.metrics.detect>75?"atividade maliciosa provável":state.metrics.detect>45?"anomalia OT em investigação":"mudança operacional ainda plausível"}
+Próxima reação: ${state.metrics.detect>75?"isolar ENG-WS-02 e chamar engenharia de campo":state.metrics.detect>45?"hunting em PLC/Historian":"observação N1"}
+
+O SOC não é burro. Só está preso em processo, ruído e KPI. Igual todo mundo.`);
+        socMsg("Consulta indireta de postura defensiva. Isso aqui é jogo, na vida real o SOC não te manda boletim com fofoca.", "");
+        updateUI(); return;
+      }
+
+      term("Comando não reconhecido. Digite help. Não invente exploit em CLP como se fosse filme ruim.", "#ff9d9d");
+      alter({detect:+1,noise:+1});
+    }
+
+    const assetInfo = {
+      ids:{
+        title:"IDS Industrial",
+        tele:()=>[["Ruído",Math.round(state.metrics.noise)+"%"],["Assinatura","Modbus write"],["Modo","behavioral"]],
+        text:()=>`O IDS industrial observa padrões de protocolo e comportamento.
+
+Aprendizado:
+- Scan ativo aumenta ruído.
+- Escrita de registrador chama mais atenção que leitura.
+- Mudança física persistente vira correlação, mesmo sem IOC bonito.`,
+        actions:[["Reduzir cadência de comandos",()=>alter({noise:-6,detect:-3},"Cadência reduzida. Menos barulho no IDS.")]]
+      },
+      soc:{
+        title:"SOC NPC",
+        tele:()=>[["Detecção",Math.round(state.metrics.detect)+"%"],["Fila","N1/N2"],["Humor","cafeinado"]],
+        text:()=>`O SOC NPC é equilibrado:
+- N1 observa ruído baixo.
+- N2 correlaciona alteração recorrente.
+- Engenharia OT valida processo físico.
+- Se passar do limite, eles isolam a estação de engenharia.
+
+Ele não adivinha tudo. Mas também não é figurante de filme de hacker.`,
+        actions:[["Gerar ruído operacional falso",()=>alter({noise:+12,detect:+4,stable:-2},"Ruído falso gerado. Pode distrair, mas também vira padrão. Esperto e burro ao mesmo tempo.")]]
+      },
+      sensor:{
+        title:"Sensor PT-44",
+        tele:()=>[["Pressão",(6.2 + state.metrics.drift*.11).toFixed(2)+" bar"],["Qualidade","GOOD"],["Desvio",Math.round(state.metrics.physical)+"%"]],
+        text:()=>`PT-44 mede pressão física.
+
+Aprendizado:
+Mesmo que o pacote pareça normal, a física denuncia. OT não é só rede. É processo real fazendo cara feia.`,
+        actions:[["Comparar com HMI",()=>alter({detect:+2,physical:-1},"Comparação mostrou que pressão física acompanha o drift. A planta está contando a verdade sem PowerPoint.")]]
+      },
+      reactor:{
+        title:"Reator R-07",
+        tele:()=>[["Temperatura",(74+state.metrics.drift*.45).toFixed(1)+" °C"],["Pressão",(6.2+state.metrics.drift*.11).toFixed(2)+" bar"],["Estabilidade",Math.round(state.metrics.stable)+"%"]],
+        text:()=>`O reator responde lentamente ao drift da V-12.
+
+Aprendizado:
+Ataque OT bom não parece ataque no primeiro minuto. Parece eficiência estranha, ajuste pequeno ou manutenção mal documentada.`,
+        actions:[["Aguardar efeito físico",()=>alter({physical:+3,stable:-2},"Você aguardou. A física acumulou efeito. OT é lento até não ser.")]]
+      },
+      valve:{
+        title:"Válvula V-12",
+        tele:()=>[["Register","40112"],["Drift",Math.round(state.metrics.drift)+"%"],["Função","Write Single Register"]],
+        text:()=>`V-12 é o alvo.
+
+Comando útil:
+write-valve V-12 +1
+
+Comando barulhento:
+write-valve V-12 +3
+
+Aprendizado:
+Stealth em OT é gradual. Alteração brusca pode até funcionar, mas o processo e o SOC percebem.`,
+        actions:[["Aplicar +1% seguro",()=>runCommand("write-valve V-12 +1")],["Aplicar +3% agressivo",()=>runCommand("write-valve V-12 +3")]]
+      },
+      plc:{
+        title:"PLC-4A",
+        tele:()=>[["Protocol","Modbus/TCP"],["Scan time","18ms"],["Modo","AUTO"]],
+        text:()=>`PLC-4A controla a malha do R-07.
+
+Aprendizado:
+O PLC aceita comandos válidos. Isso é o terror elegante de OT: nem tudo que é permitido deveria ser seguro.`,
+        actions:[["Ler registrador 40112",()=>runCommand("read-register 40112")]]
+      },
+      eng:{
+        title:"ENG-WS-02",
+        tele:()=>[["Sessão","herdada"],["Zona","Level 3/2"],["Risco","médio"]],
+        text:()=>`Estação de engenharia com sessão herdada.
+
+Aprendizado:
+Muitos incidentes OT não começam no CLP. Começam na estação que todo mundo precisa usar e ninguém quer endurecer porque “para a produção”.`,
+        actions:[["Usar como origem",()=>{state.flags.eng=true; alter({detect:+4,noise:+2},"Origem ENG-WS-02 usada. Parece plausível para manutenção, até abusar.")}]]
+      },
+      historian:{
+        title:"Historiador H-9",
+        tele:()=>[["Trend","V-12"],["Baseline","0-2%"],["Atual",Math.round(state.metrics.drift)+"%"]],
+        text:()=>`Historiador registra tendências.
+
+Aprendizado:
+Se a rede não detecta, o histórico operacional pode detectar. O atacante precisa respeitar baseline, não só firewall.`,
+        actions:[["Consultar tendência",()=>runCommand("historian-query V-12")]]
+      }
+    };
+
+    function openAsset(k){
+      const a=assetInfo[k];
+      $("#assetTitle").textContent=a.title;
+      $("#telemetry").innerHTML=a.tele().map(([k,v])=>`<div class="tele"><b>${k}</b><strong>${v}</strong></div>`).join("");
+      $("#assetText").textContent=a.text();
+      $("#assetActions").innerHTML=a.actions.map((x,i)=>`<button class="btn secondary" data-action="${i}">${x[0]}</button>`).join("");
+      $("#assetModal").classList.add("active");
+      $("#assetActions").onclick=e=>{
+        const b=e.target.closest("button[data-action]"); if(!b) return;
+        a.actions[Number(b.dataset.action)][1]();
+        $("#assetModal").classList.remove("active");
+      };
+      beep(360,.05,"triangle");
+    }
+
+    function start(){
+      const name=$("#playerName").value.trim();
+      if(!name){toast("Coloque o nome. Até válvula tem TAG, amor."); beep(140,.08,"square"); return}
+      state.player=name;
+      $("#startPage").classList.remove("active");
+      $("#gamePage").classList.add("active");
+      $("#tutorialModal").classList.add("active");
+      $("#termOut").innerHTML="";
+      term("Silent Pressure OT Shell iniciado.");
+      term("Digite help para ver comandos. Sim, a console é interativa.");
+      socMsg("N1: turno nominal. Baseline OT carregado. Nenhuma anomalia crítica.", "");
+      updateUI();
+      state.timer=setInterval(tick,1000);
+    }
+
+    function tick(){
+      if(state.finished) return;
+      state.seconds++;
+      $("#clock").textContent=fmtTime(state.seconds);
+      if(state.seconds%12===0){
+        const m=state.metrics;
+        if(m.drift>0){
+          alter({physical:+Math.max(1,m.drift*.22),stable:-Math.max(1,m.drift*.13),detect:+(m.drift>6?2:1)}, "");
+        }
+        if(m.noise>45 && state.seconds%24===0) socMsg("N1: ruído OT acima do comum. Aguardando correlação com processo físico.", "warn");
+        if(m.detect>55 && state.seconds%24===0) socMsg("N2: investigando ENG-WS-02, PLC-4A e H-9. A brincadeira começou a ter ata.", "warn");
+      }
+      if(state.seconds===45) socMsg("N1: manutenção programada no ambiente. Janela operacional aumenta ruído aceitável.", "");
+      if(state.seconds===90 && state.metrics.drift>5) socMsg("Operador: V-12 está exigindo correções demais hoje. Alguém mexeu nisso?", "warn");
+      if(state.seconds>=210) finish();
+      checkEnd();
+    }
+
+    function checkEnd(){
+      const m=state.metrics;
+      if(state.finished) return;
+      if(m.drift>=12 && m.detect<75 && m.physical<70) finish();
+      if(m.detect>=95 || m.physical>=95 || m.stable<=12) finish();
+    }
+
+    function finish(){
+      if(state.finished) return;
+      state.finished=true; clearInterval(state.timer);
+      $("#gamePage").classList.remove("active");
+      $("#reportPage").classList.add("active");
+      buildReport();
+    }
+
+    function buildReport(){
+      const m=state.metrics;
+      const win = m.drift>=12 && m.detect<75 && m.physical<70;
+      $("#reportIntro").textContent=`${state.player}, operação encerrada em ${fmtTime(state.seconds)}. O relatório avalia manipulação de válvula, ruído, detecção SOC e consequência física.`;
+      $("#rDrift").textContent=Math.round(m.drift)+"%";
+      $("#rDetect").textContent=Math.round(m.detect)+"%";
+      $("#rPhysical").textContent=Math.round(m.physical)+"%";
+      $("#rResult").innerHTML=win?'<span style="color:#159546">Sucesso discreto</span>':'<span style="color:#b22222">Exposto</span>';
+      $("#learned").innerHTML=[
+        "Leitura de registradores gera menos ruído que escrita.",
+        "Alteração gradual em OT pode ser mais perigosa que ataque barulhento.",
+        "O processo físico denuncia anomalias mesmo quando o tráfego parece válido.",
+        "SOC OT equilibrado correlaciona rede, historiador, estação de engenharia e operação.",
+        "Purdue ajuda a entender caminho e consequência, não é desenho bonito para consultoria."
+      ].map(x=>`<li>${x}</li>`).join("");
+
+      let analysis = win
+        ? "O SOC observou ruído, mas não acumulou evidência suficiente para contenção. A manipulação respeitou cadência, usou reconhecimento leve e manteve plausibilidade operacional. Isso mostra por que ataques OT discretos são difíceis: o pacote pode parecer autorizado enquanto o processo muda devagar."
+        : m.detect>=75
+          ? "O SOC escalou porque houve ruído excessivo, escrita agressiva ou padrão recorrente incompatível com baseline. O atacante foi detectado não por mágica, mas por correlação entre protocolo, estação de origem, historiador e impacto físico."
+          : "A operação falhou mais pela física do que pelo SOC. Em OT, a planta também é sensor. Se pressão, temperatura e estabilidade saem do baseline, alguém percebe mesmo sem IOC cinematográfico.";
+      $("#socAnalysis").textContent=analysis;
+      $("#acid").textContent=win
+        ? "Parabéns. Você foi menos barulhento que fornecedor prometendo integração nativa. Raro."
+        : "A planta sobreviveu, mas seu stealth teve a sutileza de um e-mail com assunto 'URGENTE CLIQUE AQUI'.";
+      $("#certName").textContent=state.player;
+      $("#certText").textContent=win
+        ? "Por demonstrar entendimento prático de OT Security, manipulação controlada de processo industrial, stealth operacional e correlação entre protocolo, SOC e impacto físico."
+        : "Por concluir a simulação Silent Pressure e compreender como pequenas alterações operacionais podem gerar impacto físico, detecção SOC e degradação industrial.";
+      $("#certDate").textContent=new Date().toLocaleDateString("pt-BR");
+    }
+
+    function downloadCert(){
+      const canvas=document.createElement("canvas"); canvas.width=1600; canvas.height=1100;
+      const ctx=canvas.getContext("2d");
+
+      const g=ctx.createLinearGradient(0,0,1600,1100);
+      g.addColorStop(0,"#11171b");
+      g.addColorStop(.5,"#4b565e");
+      g.addColorStop(1,"#151a1d");
+      ctx.fillStyle=g;
+      ctx.fillRect(0,0,1600,1100);
+
+      // brushed steel lines
+      ctx.globalAlpha=.18;
+      for(let y=0;y<1100;y+=7){
+        ctx.fillStyle = y%21===0 ? "#ffffff" : "#000000";
+        ctx.fillRect(0,y,1600,1);
+      }
+      ctx.globalAlpha=1;
+
+      // hazard stripes
+      for(let x=-80;x<1700;x+=80){
+        ctx.fillStyle="#ffcc33"; ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x+45,0); ctx.lineTo(x-25,86); ctx.lineTo(x-70,86); ctx.closePath(); ctx.fill();
+        ctx.fillStyle="#111"; ctx.beginPath(); ctx.moveTo(x+45,0); ctx.lineTo(x+90,0); ctx.lineTo(x+20,86); ctx.lineTo(x-25,86); ctx.closePath(); ctx.fill();
+        ctx.fillStyle="#ffcc33"; ctx.beginPath(); ctx.moveTo(x,1014); ctx.lineTo(x+45,1014); ctx.lineTo(x-25,1100); ctx.lineTo(x-70,1100); ctx.closePath(); ctx.fill();
+        ctx.fillStyle="#111"; ctx.beginPath(); ctx.moveTo(x+45,1014); ctx.lineTo(x+90,1014); ctx.lineTo(x+20,1100); ctx.lineTo(x-25,1100); ctx.closePath(); ctx.fill();
+      }
+
+      // frame
+      ctx.strokeStyle="#ffcc33"; ctx.lineWidth=8; ctx.strokeRect(70,105,1460,890);
+      ctx.strokeStyle="rgba(255,255,255,.45)"; ctx.lineWidth=2; ctx.strokeRect(105,140,1390,820);
+
+      // seal
+      ctx.beginPath(); ctx.arc(1330,250,92,0,Math.PI*2); ctx.fillStyle="rgba(0,0,0,.32)"; ctx.fill(); ctx.strokeStyle="#ffcc33"; ctx.lineWidth=5; ctx.stroke();
+      ctx.fillStyle="#ffdf79"; ctx.font="bold 28px Georgia"; ctx.textAlign="center"; ctx.fillText("OT",1330,242);
+      ctx.font="bold 18px Georgia"; ctx.fillText("SECURITY",1330,272);
+
+      ctx.textAlign="center";
+      ctx.fillStyle="#ffe89d"; ctx.font="bold 62px Georgia"; ctx.fillText("Certificado OT Security",800,210);
+      ctx.fillStyle="#eef4f7"; ctx.font="26px Georgia"; ctx.fillText("Concedido a",800,285);
+      ctx.fillStyle="#ffffff"; ctx.font="bold 66px Georgia"; ctx.fillText(state.player || "Participante",800,370);
+
+      ctx.fillStyle="#f3f7fa"; ctx.font="28px Georgia";
+      wrap(ctx,"Por concluir a simulação Silent Pressure, praticando conceitos de OT Security, reconhecimento industrial, registradores Modbus, Purdue, SOC OT, telemetria e consequência física.",800,455,1180,42);
+
+      // competencies panel
+      ctx.fillStyle="rgba(0,0,0,.38)";
+      roundRect(ctx,220,570,1160,250,26,true,false);
+      ctx.strokeStyle="rgba(255,255,255,.28)"; ctx.lineWidth=2;
+      roundRect(ctx,220,570,1160,250,26,false,true);
+
+      ctx.textAlign="left";
+      ctx.fillStyle="#ffdf79"; ctx.font="bold 24px Georgia";
+      ctx.fillText("Competências praticadas no desafio",260,625);
+
+      const items=[
+        "Reconhecimento OT com baixo ruído operacional",
+        "Leitura e interpretação de registradores Modbus",
+        "Correlação entre processo físico e telemetria industrial",
+        "Stealth OT e manipulação gradual de válvulas",
+        "Interação entre SOC OT, historiador, PLC e engenharia",
+        "Conceitos de Purdue, IDS industrial e baseline operacional"
+      ];
+      ctx.fillStyle="#ffffff"; ctx.font="23px Georgia";
+      let y=670;
+      for(const item of items){
+        ctx.fillStyle="#ffcc33"; ctx.fillText("•",260,y);
+        ctx.fillStyle="#ffffff"; ctx.fillText(item,288,y);
+        y+=32;
+      }
+
+      ctx.textAlign="center";
+      ctx.fillStyle="#ffffff"; ctx.font="28px Georgia"; ctx.fillText("Carga horária: 2h · Data: "+new Date().toLocaleDateString("pt-BR"),800,875);
+      ctx.fillStyle="#ffdf79"; ctx.font="54px cursive"; ctx.fillText("Mariana BS (Instrutora)",800,945);
+      ctx.fillStyle="#d7e1e6"; ctx.font="20px Georgia"; ctx.fillText("Be Safe · Silent Pressure · OT Security Interactive Challenge",800,982);
+
+      const a=document.createElement("a"); a.download="certificado-silent-pressure-ot.png"; a.href=canvas.toDataURL("image/png"); a.click();
+    }
+
+    function roundRect(ctx,x,y,w,h,r,fill,stroke){
+      ctx.beginPath();
+      ctx.moveTo(x+r,y);
+      ctx.lineTo(x+w-r,y);
+      ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+      ctx.lineTo(x+w,y+h-r);
+      ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+      ctx.lineTo(x+r,y+h);
+      ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+      ctx.lineTo(x,y+r);
+      ctx.quadraticCurveTo(x,y,x+r,y);
+      if(fill) ctx.fill();
+      if(stroke) ctx.stroke();
+    }
+
+    function wrap(ctx,text,x,y,maxWidth,lineHeight){
+      const words=text.split(" "); let line="";
+      for(const w of words){
+        const test=line+w+" ";
+        if(ctx.measureText(test).width>maxWidth){ctx.fillText(line,x,y);line=w+" ";y+=lineHeight}
+        else line=test;
+      }
+      ctx.fillText(line,x,y);
+    }
+
+    document.addEventListener("mousemove",e=>{
+      const c=$("#cursor"); c.style.left=e.clientX+"px"; c.style.top=e.clientY+"px";
+    });
+    $("#startBtn").onclick=start;
+    $("#playerName").addEventListener("keydown",e=>{if(e.key==="Enter")start()});
+    $("#tutorialBtn").onclick=()=>$("#tutorialModal").classList.add("active");
+    $("#closeTutorial").onclick=()=>$("#tutorialModal").classList.remove("active");
+    $("#muteBtn").onclick=()=>{state.muted=!state.muted;$("#muteBtn").textContent=state.muted?"Som: mudo":"Som: ligado"; if(!state.muted)beep()};
+    $("#finishBtn").onclick=finish;
+    $("#restartBtn").onclick=()=>location.reload();
+    $("#downloadCert").onclick=downloadCert;
+    $("#cmdInput").addEventListener("keydown",e=>{
+      if(e.key==="Enter"){
+        const v=e.target.value; e.target.value=""; runCommand(v);
+      }
+    });
+    $$(".cmd-help button").forEach(b=>b.onclick=()=>{$("#cmdInput").value=b.dataset.cmd; $("#cmdInput").focus()});
+    $$(".asset").forEach(a=>a.onclick=()=>openAsset(a.dataset.asset));
+    $("#closeAsset").onclick=()=>$("#assetModal").classList.remove("active");
+    $("#assetModal").addEventListener("click",e=>{if(e.target.id==="assetModal")$("#assetModal").classList.remove("active")});
+    updateUI();
+  </script>
+</body>
+</html>
